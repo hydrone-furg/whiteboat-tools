@@ -12,9 +12,7 @@ class ArmMotor(MAVLinkConnection):
 
     def set_motor_pwm(self, channel, pwm):
         if not self.check_armed_status():
-            raise PermissionError(
-                "Sistema deve estar armado para ativar os motores!"
-            )
+            raise PermissionError("Sistema deve estar armado para ativar os motores!")
         
         if 1100 <= pwm <= 1900:
             self.connection.mav.command_long_send(
