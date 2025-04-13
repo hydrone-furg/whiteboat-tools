@@ -10,6 +10,22 @@ class ArmMotor(MAVLinkConnection):
         self.armed = self.connection.motors_armed()
         return self.armed
 
+    def arm_vehicle(self):
+        self.connection.mav.command_long_send(
+            self.target_system,
+            self.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,
+            1,
+            0, 0, 0, 0, 0, 0
+        )
+        conf = self.connection.recv_match(type='COMMAND_conf', blocking=True, timeout=5)
+        if conf and conf.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM and conf.result == mavutil.mavlink.MAV_RESULT_ACCEPTED:
+            self.armed = True
+            return "Veículo armado com sucesso!"
+        else:
+            raise RuntimeError("Falha ao armar o veículo.")
+
     def set_motor_pwm(self, channel, pwm):
         if not self.check_armed_status():
             raise PermissionError("Sistema deve estar armado para ativar os motores!")
@@ -36,4 +52,5 @@ class ArmMotor(MAVLinkConnection):
             0,
             0, 0, 0, 0, 0, 0
         )
+        self.armed = False
         return "Desarmado com sucesso!"
