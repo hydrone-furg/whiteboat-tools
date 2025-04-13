@@ -10,7 +10,7 @@ class MAVLinkConnection:
 
     def connect(self):
         try:
-            self.connection = mavutil.mavlink_connection(self.device, self.baud)
+            self.connection = mavutil.mavlink_connection(self.device, self.baud) # self.connection = mavutil.mavlink_connection(self.device)
             self.connection.wait_heartbeat()
             self.target_system = self.connection.target_system
             self.target_component = self.connection.target_component
