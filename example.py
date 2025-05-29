@@ -1,9 +1,8 @@
-from common import MAVLinkConnection
 from arm_motor import ArmMotor
 from log import Log
 
-connection_string = 'udpin:127.0.0.1:14550' # connection_string = '/dev/ttyACM0', baud = 115200
-arm_motor = ArmMotor(device=connection_string) # ArmMotor(device=connection_string, baud=baud)
+baud = 115200
+arm_motor = ArmMotor(baud=baud)
 
 # Conexão
 print("Conectando-se ao veículo...")
@@ -22,7 +21,7 @@ print("Desarmando o veículo...")
 print(arm_motor.force_disarm())
 
 # Log
-log_ = Log(device=connection_string)
+log_ = Log()
 print("Iniciando leitura dos sensores (pressione CTRL+C para interromper)...")
 log_result = log_.read_sensors()
 print(log_result)
