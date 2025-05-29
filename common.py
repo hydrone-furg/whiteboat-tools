@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from pymavlink import mavutil
 import serial.tools.list_ports
-import subprocess
-import re
 
 class MAVLinkConnection:
     def __init__(self, baud=115200):
