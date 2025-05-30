@@ -5,13 +5,19 @@ from log import process_message, save_log_file
 from time import sleep
 
 class MAVLinkConnection:
-    def __init__(self, baud=57600):
+    def __init__(self, baud=57600, sitl_address=0):
         pixhawk_port = find_pixhawk_port()
         if pixhawk_port:
             print(f"Porta do Pixhawk detectada: {pixhawk_port}")
+            self.port = pixhawk_port
         else:
             print("Pixhawk não encontrado. Verifique a conexão USB.")
-        self.port = pixhawk_port
+        sitl_port = sitl_address
+        if sitl_port != 0:
+            print(f"Porta do SITL detectada: {sitl_port}")
+            self.port = sitl_port
+        else:
+            print("SITL não encontrado. Verifique a conexão.")
         self.baud = baud
         self.connection = None
         self.target_system = None
