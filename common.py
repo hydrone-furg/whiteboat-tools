@@ -5,19 +5,21 @@ from log import process_message, save_log_file
 from time import sleep
 
 class MAVLinkConnection:
-    def __init__(self, baud=57600, sitl_address=0):
+    def __init__(self, baud=57600, sitl_address=0, simulating=False):
         pixhawk_port = find_pixhawk_port()
+
         if pixhawk_port:
             print(f"Porta do Pixhawk detectada: {pixhawk_port}")
             self.port = pixhawk_port
         else:
             print("Pixhawk não encontrado. Verifique a conexão USB.")
-        sitl_port = sitl_address
-        if sitl_port != 0:
-            print(f"Porta do SITL detectada: {sitl_port}")
-            self.port = sitl_port
+
+        if sitl_address != 0:
+            print(f"Porta do SITL detectada: {sitl_address}")
+            self.port = sitl_address
         else:
             print("SITL não encontrado. Verifique a conexão.")
+
         self.baud = baud
         self.connection = None
         self.target_system = None
@@ -67,18 +69,17 @@ class MAVLinkConnection:
             types = ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS', 'RAW_IMU', 'SCALED_IMU2', 'GPS_RAW_INT']
 
             while True:
-                msg = self.connection.recv_match(type=['ATTITUDE'], blocking=True, timeout=1.0)
+                msg = self.connection.recv_match(type=types, blocking=True, timeout=1.0)
 
                 if not msg:
                     print("Nenhuma mensagem recebida por 1 segundo...")
                     continue
 
-                print(msg)
-                # if msg and msg.get_type() in ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS']:
-                #     log_entry = process_message(msg)
-                #     print(log_entry.strip())
-                #     if self.logging:
-                #         logs.append(log_entry)
+                if msg and msg.get_type() in ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS']:
+                    log_entry = process_message(msg)
+                    print(log_entry.strip())
+                    if self.logging:
+                        logs.append(log_entry)
             
                 sleep(.05)
 
