@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pymavlink import mavutil
 import serial.tools.list_ports
-from log import process_message, save_log_file
+from whiteboat_tools.log import process_message, save_log_file
 from time import sleep
 
 class MAVLinkConnection:
