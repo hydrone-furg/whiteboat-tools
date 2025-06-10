@@ -38,22 +38,22 @@ class MAVLinkConnection:
             self.coonected = True
             
             # Habilitar streams importantes (opcional - algumas mensagens são enviadas por padrão)
-            streams = [
-                mavutil.mavlink.MAV_DATA_STREAM_RAW_SENSORS,
-                mavutil.mavlink.MAV_DATA_STREAM_EXTENDED_STATUS,
-                mavutil.mavlink.MAV_DATA_STREAM_POSITION,
-                mavutil.mavlink.MAV_DATA_STREAM_EXTRA1,
-                mavutil.mavlink.MAV_DATA_STREAM_EXTRA2
-            ]
+            # streams = [
+            #     mavutil.mavlink.MAV_DATA_STREAM_RAW_SENSORS,
+            #     mavutil.mavlink.MAV_DATA_STREAM_EXTENDED_STATUS,
+            #     mavutil.mavlink.MAV_DATA_STREAM_POSITION,
+            #     mavutil.mavlink.MAV_DATA_STREAM_EXTRA1,
+            #     mavutil.mavlink.MAV_DATA_STREAM_EXTRA2
+            # ]
 
-            for stream_id in streams:
-                self.connection.mav.request_data_stream_send(
-                    self.connection.target_system,
-                    self.connection.target_component,
-                    stream_id,
-                    10,  # 10 Hz
-                    1    # 1 para habilitar
-                )
+            # for stream_id in streams:
+            #     self.connection.mav.request_data_stream_send(
+            #         self.connection.target_system,
+            #         self.connection.target_component,
+            #         stream_id,
+            #         10,  # 10 Hz
+            #         1    # 1 para habilitar
+            #     )
 
             sleep(1)
             return f"Conectado a {self.port}"
@@ -61,32 +61,35 @@ class MAVLinkConnection:
             raise ConnectionError(f"Erro na conexão: {e}")
         
     def read_sensors(self):
-        if not self.coonected:
-            raise ConnectionError("Conexão não foi estabelecida")
-        
+        """
+        Reads given sensor messages.
+
+        Returns:
+            MAVLink_message: Sensor message. https://github.com/PenguPilot/pymavlink/blob/master/mavlink.py
+        """
+
+        types = ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS', 'RAW_IMU', 'SCALED_IMU2']
+
+        msg = self.connection.recv_match(type=types, blocking=True, timeout=.1)
+        return msg
+
+    def record_log(self):
         try:
             logs = []
-            types = ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS', 'RAW_IMU', 'SCALED_IMU2', 'GPS_RAW_INT']
+            types = ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS']
 
             while True:
                 msg = self.connection.recv_match(type=types, blocking=True, timeout=1.0)
 
                 if not msg:
                     print("Nenhuma mensagem recebida por 1 segundo...")
-                    continue
-
-                if msg and msg.get_type() in ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS']:
+                else:
                     log_entry = process_message(msg)
-                    if log_entry:
-                        print(f"GPS Capturado: lat={log_entry[0]:.7f}, long={log_entry[1]:.7f}")
-                        if self.logging:
-                            logs.append(log_entry)
-            
-                sleep(.05)
+                    logs.append(log_entry)
+                    sleep(.05)
 
         except KeyboardInterrupt:
-            if self.logging:
-                save_log_file(logs)
+            save_log_file(logs)
             self.connection.close()
             return "Leitura interrompida pelo usuário"
         
