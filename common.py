@@ -8,13 +8,13 @@ class MAVLinkConnection:
     def __init__(self, baud=57600, sitl_address=0, simulating=False):
         pixhawk_port = find_pixhawk_port()
 
-        if pixhawk_port:
+        if pixhawk_port and simulating==False:
             print(f"Porta do Pixhawk detectada: {pixhawk_port}")
             self.port = pixhawk_port
         else:
             print("Pixhawk não encontrado. Verifique a conexão USB.")
 
-        if sitl_address != 0:
+        if sitl_address != 0 and simulating==True:
             print(f"Porta do SITL detectada: {sitl_address}")
             self.port = sitl_address
         else:
@@ -77,9 +77,10 @@ class MAVLinkConnection:
 
                 if msg and msg.get_type() in ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS']:
                     log_entry = process_message(msg)
-                    print(log_entry.strip())
-                    if self.logging:
-                        logs.append(log_entry)
+                    if log_entry:
+                        print(f"GPS Capturado: lat={log_entry[0]:.7f}, long={log_entry[1]:.7f}")
+                        if self.logging:
+                            logs.append(log_entry)
             
                 sleep(.05)
 
