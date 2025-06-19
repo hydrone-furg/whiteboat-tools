@@ -68,7 +68,7 @@ class MAVLinkConnection:
             MAVLink_message: Sensor message. https://github.com/PenguPilot/pymavlink/blob/master/mavlink.py
         """
 
-        types = ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS', 'RAW_IMU', 'SCALED_IMU2']
+        types = ['ATTITUDE', 'GPS_RAW_INT', 'SYS_STATUS', 'RAW_IMU', 'SCALED_IMU2', 'HIGHRES_IMU']
 
         msg = self.connection.recv_match(type=types, blocking=True, timeout=.1)
         return msg
