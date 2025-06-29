@@ -8,18 +8,18 @@ def process_message(msg):
         return [lat, lon]
     return None
 
-# TODO: Create log file once and append data at each iteration
-# def save_log_file(logs):
-#     if logs:
-#         filename = f'{datetime.now().strftime("%Y-%m-%d-%H%M%S")}-gps_log.csv'
-#         header = ['lat', 'long']
+#TODO: Create log file once and append data at each iteration
+def save_log_file(logs):
+    if logs:
+        filename = f'{datetime.now().strftime("%Y-%m-%d-%H%M%S")}-gps_log.csv'
+        header = ['lat', 'long']
         
-#         with open(filename, 'w', newline='', encoding='utf-8') as f:
-#             writer = csv.writer(f)
-#             writer.writerow(header)
-#             writer.writerows(logs)
+        with open(filename, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerows(logs)
             
-#         print(f"\nLog de GPS salvo com sucesso em {filename}")
-#         return f"Log salvo em {filename}"
-#     print("\nNenhum dado de GPS foi capturado para salvar.")
-#     return "Nenhum log para salvar"
+        print(f"\nLog de GPS salvo com sucesso em {filename}")
+        return f"Log salvo em {filename}"
+    print("\nNenhum dado de GPS foi capturado para salvar.")
+    return "Nenhum log para salvar"

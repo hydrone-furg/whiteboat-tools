@@ -6,6 +6,7 @@ from time import sleep
 
 class MAVLinkConnection:
     def __init__(self, baud=57600, sitl_address=0, simulating=False):
+        self.port = None # Define antes do if para que exista a variável
         pixhawk_port = find_pixhawk_port()
 
         if pixhawk_port and simulating==False:
@@ -14,11 +15,16 @@ class MAVLinkConnection:
         else:
             print("Pixhawk não encontrado. Verifique a conexão USB.")
 
-        if sitl_address != 0 and simulating==True:
+        if sitl_address != 0 or simulating==True:
             print(f"Porta do SITL detectada: {sitl_address}")
             self.port = sitl_address
+        
         else:
             print("SITL não encontrado. Verifique a conexão.")
+
+        if self.port == None: # Verifica se a porta ainda não existe
+            raise ValueError("Porta não definida (Pixhawk ou SITL)")
+
 
         self.baud = baud
         self.connection = None
@@ -137,4 +143,37 @@ def find_pixhawk_port():
     
     return None
 
+def request_stream(stream_type: str):
+    """
+    Solicita a ativação de um determinado tipo de stream via MAVLink.
+
+    Args:
+        stream_type (str): tipo de stream (ex: "ATTITUDE", "GPS_RAW_INT", "SYS_STATUS")
+
+    Returns:
+        (bool, str): sucesso, mensagem
+    """
+    try:
+        conn = MAVLinkConnection(sitl_address="udp:127.0.0.1:14550", simulating=True) 
+        status = conn.connect()
+        
+        # Mapeamento de stream_type para MAVLink message IDs
+        message_ids = {
+            "ATTITUDE": 30,
+            "GPS_RAW_INT": 24,
+            "SYS_STATUS": 1,
+            "RAW_IMU": 27,
+            "SCALED_IMU2": 116,
+            "HIGHRES_IMU": 105
+        }
+
+        if stream_type not in message_ids:
+            return False, f"Tipo de stream '{stream_type}' não reconhecido."
+
+        msg_id = message_ids[stream_type]
+        conn.request_message_interval(msg_id, 10)  # 10 Hz
+        return True, f"Solicitado stream '{stream_type}' com sucesso."
+
+    except Exception as e:
+        return False, f"Erro ao solicitar stream: {e}"
 
