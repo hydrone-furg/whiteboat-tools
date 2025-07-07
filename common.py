@@ -161,16 +161,6 @@ class MAVLinkConnection:
             self.target_component, 
             *rc_channel_values
         )
-
-    def release_rc_control(self):
-        if not self.connected:
-            return
-        self.connection.mav.rc_channels_override_send(
-            self.target_system, 
-            self.target_component,
-            0, 0, 0, 0, 0, 0, 0, 0, *[65535]*10
-        )
-        print("Back to manual control.")
         
     def clear_rc_override(self):
         """
@@ -183,7 +173,6 @@ class MAVLinkConnection:
             self.target_component,
             0, 0, 0, 0, 0, 0, 0, 0)
         print("RC override cleared.")
-
 
 def find_pixhawk_port():
     # Lista todas as portas seriais disponíveis
