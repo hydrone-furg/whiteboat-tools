@@ -2,46 +2,42 @@
 from pymavlink import mavutil
 import serial.tools.list_ports
 from whiteboat_tools.log import process_message, save_log_file
-from time import sleep
+from time import sleep, time
+import sys
 
 class MAVLinkConnection:
     def __init__(self, baud=57600, sitl_address=0, simulating=False):
-        self.port = None # Define antes do if para que exista a variável
+        self.port = None 
         pixhawk_port = find_pixhawk_port()
 
-        if pixhawk_port and simulating==False:
-            print(f"Porta do Pixhawk detectada: {pixhawk_port}")
+        if pixhawk_port and not simulating:
+            print(f"Porta da Pixhawk detectada: {pixhawk_port}")
             self.port = pixhawk_port
-        else:
-            print("Pixhawk não encontrado. Verifique a conexão USB.")
-
-        if sitl_address != 0 or simulating==True:
-            print(f"Porta do SITL detectada: {sitl_address}")
+        
+        if simulating:
+            print(f"Usando endereço SITL: {sitl_address}")
             self.port = sitl_address
         
-        else:
-            print("SITL não encontrado. Verifique a conexão.")
-
-        if self.port == None: # Verifica se a porta ainda não existe
-            raise ValueError("Porta não definida (Pixhawk ou SITL)")
-
+        if self.port is None:
+            raise ValueError("Nenhuma porta de conexão foi definida (Pixhawk ou SITL).")
 
         self.baud = baud
         self.connection = None
         self.target_system = None
         self.target_component = None
         self.logging = True
-        self.coonected = False
+        self.connected = False
 
     def connect(self):
         try:
-            self.connection = mavutil.mavlink_connection(self.port, self.baud) # self.connection = mavutil.mavlink_connection(self.device)
+            print(f"Conectando a {self.port} com baudrate {self.baud}...") 
+            self.connection = mavutil.mavlink_connection(self.port, baud=self.baud) # self.connection = mavutil.mavlink_connection(self.device)
             print("Aguardando heartbeat...")           
             self.connection.wait_heartbeat()
             print(f"Heartbeat recebido! (Sistema: {self.connection.target_system}, Componente: {self.connection.target_component})")
             self.target_system = self.connection.target_system
             self.target_component = self.connection.target_component
-            self.coonected = True
+            self.connected = True
             
             # Habilitar streams importantes (opcional - algumas mensagens são enviadas por padrão)
             # streams = [
@@ -51,7 +47,6 @@ class MAVLinkConnection:
             #     mavutil.mavlink.MAV_DATA_STREAM_EXTRA1,
             #     mavutil.mavlink.MAV_DATA_STREAM_EXTRA2
             # ]
-
             # for stream_id in streams:
             #     self.connection.mav.request_data_stream_send(
             #         self.connection.target_system,
@@ -60,12 +55,12 @@ class MAVLinkConnection:
             #         10,  # 10 Hz
             #         1    # 1 para habilitar
             #     )
-
+            
             sleep(1)
             return f"Conectado a {self.port}"
         except Exception as e:
             raise ConnectionError(f"Erro na conexão: {e}")
-        
+
     def read_sensors(self):
         """
         Reads given sensor messages.
@@ -98,7 +93,7 @@ class MAVLinkConnection:
             save_log_file(logs)
             self.connection.close()
             return "Leitura interrompida pelo usuário"
-        
+
     def request_message_interval(self, message_id: int, frequency_hz: float):
         """
         Request MAVLink message in a desired frequency,
@@ -117,6 +112,78 @@ class MAVLinkConnection:
             0, 0, 0, 0, # Unused parameters
             0, # Target address of message stream (if message has target address fields). 0: Flight-stack default (recommended), 1: address of requestor, 2: broadcast.
         )
+
+    def arm(self):
+        """
+        Arming the vehicle.
+        """
+        if not self.connected:
+            return
+        self.connection.mav.command_long_send(
+            self.target_system, 
+            self.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,
+            1, # 1 to arming
+            0, 0, 0, 0, 0, 0
+        )
+        self.connection.motors_armed_wait()
+
+    def disarm(self):
+        """
+        Disarming the vehicle.
+        """
+        if not self.connected:
+            return
+        self.connection.mav.command_long_send(
+            self.target_system, 
+            self.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,
+            0, # 0 to disarming
+            0, 0, 0, 0, 0, 0
+        )
+        self.connection.motors_disarmed_wait()
+
+    def set_rc_channel_pwm(self, channel_id: int, pwm: int = 1500):
+        """
+        Sets the PWM for the given RC channel.
+        """
+        if not self.connected:
+            return
+        if not 1 <= channel_id <= 18:
+            print("Error: Invalid ID.")
+            return
+        rc_channel_values = [65535] * 18
+        rc_channel_values[channel_id - 1] = pwm
+        self.connection.mav.rc_channels_override_send(
+            self.target_system, 
+            self.target_component, 
+            *rc_channel_values
+        )
+
+    def release_rc_control(self):
+        if not self.connected:
+            return
+        self.connection.mav.rc_channels_override_send(
+            self.target_system, 
+            self.target_component,
+            0, 0, 0, 0, 0, 0, 0, 0, *[65535]*10
+        )
+        print("Back to manual control.")
+        
+    def clear_rc_override(self):
+        """
+        Releases all RC channels, returning to manual control.
+        """
+        if not self.connected:
+            return
+        self.connection.mav.rc_channels_override_send(
+            self.target_system,
+            self.target_component,
+            0, 0, 0, 0, 0, 0, 0, 0)
+        print("RC override cleared.")
+
 
 def find_pixhawk_port():
     # Lista todas as portas seriais disponíveis
@@ -176,4 +243,3 @@ def request_stream(stream_type: str):
 
     except Exception as e:
         return False, f"Erro ao solicitar stream: {e}"
-
