@@ -210,7 +210,8 @@ def request_stream(stream_type: str):
         (bool, str): sucesso, mensagem
     """
     try:
-        conn = MAVLinkConnection(sitl_address="udp:127.0.0.1:14550", simulating=True) 
+        #conn = MAVLinkConnection(sitl_address="udp:127.0.0.1:14550", simulating=True)
+        conn = MAVLinkConnection(baud=57600, simulating=False)
         status = conn.connect()
         
         # Mapeamento de stream_type para MAVLink message IDs
