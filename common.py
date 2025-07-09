@@ -173,6 +173,41 @@ class MAVLinkConnection:
             self.target_component,
             0, 0, 0, 0, 0, 0, 0, 0)
         print("RC override cleared.")
+        
+    def request_stream(self, stream_type: str):
+        """
+        Solicita a ativação de um determinado tipo de stream via MAVLink.
+
+        Args:
+            stream_type (str): tipo de stream (ex: "ATTITUDE", "GPS_RAW_INT", "SYS_STATUS")
+
+        Returns:
+            (bool, str): sucesso, mensagem
+        """
+        try:
+            #conn = MAVLinkConnection(sitl_address="udp:127.0.0.1:14550", simulating=True)
+            if not self.connected:
+                return
+            
+            # Mapeamento de stream_type para MAVLink message IDs
+            message_ids = {
+                "ATTITUDE": 30,
+                "GPS_RAW_INT": 24,
+                "SYS_STATUS": 1,
+                "RAW_IMU": 27,
+                "SCALED_IMU2": 116,
+                "HIGHRES_IMU": 105
+            }
+
+            if stream_type not in message_ids:
+                return False, f"Tipo de stream '{stream_type}' não reconhecido."
+
+            msg_id = message_ids[stream_type]
+            self.connect().request_message_interval(msg_id, 10.0)  # 10 Hz
+            return True, f"Solicitado stream '{stream_type}' com sucesso."
+
+        except Exception as e:
+            return False, f"Erro ao solicitar stream: {e}"
 
 def find_pixhawk_port():
     # Lista todas as portas seriais disponíveis
@@ -199,37 +234,4 @@ def find_pixhawk_port():
     
     return None
 
-def request_stream(stream_type: str):
-    """
-    Solicita a ativação de um determinado tipo de stream via MAVLink.
 
-    Args:
-        stream_type (str): tipo de stream (ex: "ATTITUDE", "GPS_RAW_INT", "SYS_STATUS")
-
-    Returns:
-        (bool, str): sucesso, mensagem
-    """
-    try:
-        #conn = MAVLinkConnection(sitl_address="udp:127.0.0.1:14550", simulating=True)
-        conn = MAVLinkConnection(baud=57600, simulating=False)
-        status = conn.connect()
-        
-        # Mapeamento de stream_type para MAVLink message IDs
-        message_ids = {
-            "ATTITUDE": 30,
-            "GPS_RAW_INT": 24,
-            "SYS_STATUS": 1,
-            "RAW_IMU": 27,
-            "SCALED_IMU2": 116,
-            "HIGHRES_IMU": 105
-        }
-
-        if stream_type not in message_ids:
-            return False, f"Tipo de stream '{stream_type}' não reconhecido."
-
-        msg_id = message_ids[stream_type]
-        conn.request_message_interval(msg_id, 10)  # 10 Hz
-        return True, f"Solicitado stream '{stream_type}' com sucesso."
-
-    except Exception as e:
-        return False, f"Erro ao solicitar stream: {e}"
