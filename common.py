@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pymavlink import mavutil
 import serial.tools.list_ports
-from whiteboat_tools.log import process_message, save_log_file
+# from whiteboat_tools.log import process_message, save_log_file
 from time import sleep, time
 import sys
 
@@ -73,7 +73,8 @@ class MAVLinkConnection:
 
         msg = self.connection.recv_match(type=types, blocking=True, timeout=.1)
         return msg
-
+    
+    '''
     def record_log(self):
         try:
             logs = []
@@ -93,6 +94,7 @@ class MAVLinkConnection:
             save_log_file(logs)
             self.connection.close()
             return "Leitura interrompida pelo usuário"
+    '''
 
     def request_message_interval(self, message_id: int, frequency_hz: float):
         """
