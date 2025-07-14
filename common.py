@@ -205,7 +205,7 @@ class MAVLinkConnection:
                 return False, f"Tipo de stream '{stream_type}' não reconhecido."
 
             msg_id = message_ids[stream_type]
-            self.connect().request_message_interval(msg_id, 10.0)  # 10 Hz
+            self.request_message_interval(msg_id, 10.0)  # 10 Hz
             return True, f"Solicitado stream '{stream_type}' com sucesso."
 
         except Exception as e:
